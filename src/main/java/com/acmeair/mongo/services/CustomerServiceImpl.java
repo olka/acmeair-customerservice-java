@@ -20,6 +20,8 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Updates.combine;
 import static com.mongodb.client.model.Updates.set;
 
+import java.util.List;
+
 import com.acmeair.mongo.ConnectionManager;
 import com.acmeair.mongo.MongoConstants;
 import com.acmeair.service.CustomerService;
@@ -54,19 +56,15 @@ public class CustomerServiceImpl extends CustomerService implements MongoConstan
   }
 
   @Override
-  public void createCustomer(String username, String password, String status, 
+  public Document createCustomer(String username, String password, String status, 
       int totalMiles, int milesYtd,
-      String phoneNumber, String phoneNumberType, String addressJson) {
+      String phoneNumber, String phoneNumberType, Document address) {
 
-    new Document();
-    Document customerDoc = new Document("_id", username)
-        .append("password", password)
-        .append("status", status)
+    return new Document("_id", username)
+        .append("password", password).append("status", status)
         .append("total_miles", totalMiles).append("miles_ytd", milesYtd)
-        .append("address", Document.parse(addressJson)).append("phoneNumber", phoneNumber)
+        .append("address", address).append("phoneNumber", phoneNumber)
         .append("phoneNumberType", phoneNumberType);
-
-    customer.insertOne(customerDoc);
   }
 
   @Override
@@ -150,4 +148,9 @@ public class CustomerServiceImpl extends CustomerService implements MongoConstan
   public boolean isConnected() {
     return (customer.countDocuments() >= 0);
   }
+
+@Override
+public void persistCustomers(List<Document> customers) {
+	customer.insertMany(customers);	
+}
 }

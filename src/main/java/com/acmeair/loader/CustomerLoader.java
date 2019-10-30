@@ -18,61 +18,71 @@ package com.acmeair.loader;
 
 import com.acmeair.service.CustomerService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import org.bson.Document;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class CustomerLoader {
 
-  @Inject
-  CustomerService customerService;
-  
-  @Inject 
-  @ConfigProperty(name = "NUM_CUSTOMERS_TO_LOAD", defaultValue = "10000") 
-  private Integer numCustomersToLoad;
-  
-  private static Logger logger = Logger.getLogger(CustomerLoader.class.getName());
+	@Inject
+	CustomerService customerService;
 
-  /**
-   * Get default number of customers.
-   */
-  
-  public String queryLoader() {
-    
-    return numCustomersToLoad.toString();
-  }
+	@Inject
+	@ConfigProperty(name = "NUM_CUSTOMERS_TO_LOAD", defaultValue = "10000")
+	private Integer numCustomersToLoad;
 
-  /**
-   * Load customer db.
-   */
-  public String loadCustomerDb(long numCustomers) {
+	private static Logger logger = Logger.getLogger(CustomerLoader.class.getName());
 
-    double length = 0;
-    try {
-     
-      logger.info("Start loading " +  numCustomers + " customers");
-      long start = System.currentTimeMillis(); 
-      customerService.dropCustomers();
+	/**
+	 * Get default number of customers.
+	 */
 
-      String addressJson =  "{streetAddress1 : \"123 Main St.\", streetAddress2 :null, city: "
-          + "\"Anytown\", stateProvince: \"NC\", country: \"USA\", postalCode: \"27617\"}";
+	public String queryLoader() {
 
-      for (long ii = 0; ii < numCustomers; ii++) {
-        customerService.createCustomer("uid" + ii + "@email.com", "password", "GOLD", 0, 0, 
-            "919-123-4567", "BUSINESS", addressJson);
-      }
+		return numCustomersToLoad.toString();
+	}
 
-      long stop = System.currentTimeMillis();
-      logger.info("Finished loading in " + (stop - start) / 1000.0 + " seconds");
-      length = (stop - start) / 1000.0;
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    
-    return "Loaded "  +  numCustomers + " customers in " + length + " seconds";
-  } 
+	private Document address = Document.parse("{streetAddress1 : \"123 Main St.\", streetAddress2 :null, city: "
+			+ "\"Anytown\", stateProvince: \"NC\", country: \"USA\", postalCode: \"27617\"}");
+
+	private String phone = "919-123-4567";
+	private String business = "BUSINESS";
+
+	/**
+	 * Load customer db.
+	 */
+	public String loadCustomerDb(int numCustomers) {
+		List<Document> documents = new ArrayList<Document>(numCustomers);
+		double length = 0;
+		int i = 0;
+		try {
+			logger.info("Start loading " + numCustomers + " customers");
+			long start = System.currentTimeMillis();
+			customerService.dropCustomers();		
+
+			for (;i < numCustomers; i++) {
+				documents.add(customerService.createCustomer("uid" + i + "@email.com", "password", "GOLD", 0, 0, phone,
+						business, address));
+			}
+			System.err.print((System.currentTimeMillis() - start) / 1000.0 + " seconds");
+			customerService.persistCustomers(documents);
+			long stop = System.currentTimeMillis();
+			logger.info("Finished loading in " + (stop - start) / 1000.0 + " seconds");
+			length = (stop - start) / 1000.0;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "Failed to load i=" + i;
+		}
+
+		return "Loaded " + numCustomers + " customers in " + length + " seconds";
+	}
 }

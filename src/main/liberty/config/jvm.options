@@ -1,4 +1,4 @@
--Xmx256m
+-Xmx1024m
 -Dhttp.keepalive=true
 -Dhttp.maxConnections=100
 -javaagent:resources/javametrics-agent.jar

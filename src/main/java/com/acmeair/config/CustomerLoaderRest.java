@@ -44,7 +44,7 @@ public class CustomerLoaderRest {
   @GET
   @Path("/load")
   @Produces("text/plain")
-  public Response loadDb(@DefaultValue("-1") @QueryParam("numCustomers") long numCustomers) {
+  public Response loadDb(@DefaultValue("-1") @QueryParam("numCustomers") int numCustomers) {
     String response = loader.loadCustomerDb(numCustomers);
     return Response.ok(response).build();
   }
