@@ -28,6 +28,9 @@ import com.acmeair.service.CustomerService;
 import com.acmeair.web.dto.CustomerInfo;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.InsertManyOptions;
+import com.mongodb.connection.ConnectionDescription;
+import com.mongodb.connection.ServerDescription;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -46,7 +49,7 @@ public class CustomerServiceImpl extends CustomerService implements MongoConstan
 
   @PostConstruct
   public void initialization() {
-    MongoDatabase database = connectionManager.getDb();
+    MongoDatabase database = connectionManager.getDb();     
     customer = database.getCollection("customer");
   }
 
@@ -149,8 +152,9 @@ public class CustomerServiceImpl extends CustomerService implements MongoConstan
     return (customer.countDocuments() >= 0);
   }
 
+  InsertManyOptions insertOpts = new InsertManyOptions().ordered(false);
 @Override
-public void persistCustomers(List<Document> customers) {
-	customer.insertMany(customers);	
+public void persistCustomers(List<Document> customers) {	
+	customer.insertMany(customers, insertOpts);	
 }
 }

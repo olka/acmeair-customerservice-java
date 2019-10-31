@@ -1,3 +1,2 @@
 -Dhttp.keepalive=true
 -Dhttp.maxConnections=100
--Xmx1524m

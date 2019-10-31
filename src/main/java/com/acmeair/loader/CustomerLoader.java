@@ -17,6 +17,7 @@
 package com.acmeair.loader;
 
 import com.acmeair.service.CustomerService;
+import com.mongodb.connection.ConnectionDescription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,26 +62,28 @@ public class CustomerLoader {
 	 * Load customer db.
 	 */
 	public String loadCustomerDb(int numCustomers) {
-		List<Document> documents = new ArrayList<Document>(numCustomers);
-		double length = 0;
-		int i = 0;
+		int batchSize = ConnectionDescription.getDefaultMaxWriteBatchSize(); 
+		List<Document> documents = new ArrayList<Document>(batchSize);
+		double length = 0;		
 		try {
 			logger.info("Start loading " + numCustomers + " customers");
 			long start = System.currentTimeMillis();
 			customerService.dropCustomers();		
 
-			for (;i < numCustomers; i++) {
+			for (int i = 0; i < numCustomers; i++) {		
 				documents.add(customerService.createCustomer("uid" + i + "@email.com", "password", "GOLD", 0, 0, phone,
 						business, address));
-			}
-			System.err.print((System.currentTimeMillis() - start) / 1000.0 + " seconds");
-			customerService.persistCustomers(documents);
+				if ( i % batchSize == 0 ) {					
+					customerService.persistCustomers(documents);		
+					documents.clear();
+				}
+			}		
+			if(!documents.isEmpty())customerService.persistCustomers(documents);		
 			long stop = System.currentTimeMillis();
 			logger.info("Finished loading in " + (stop - start) / 1000.0 + " seconds");
 			length = (stop - start) / 1000.0;
 		} catch (Exception e) {
-			e.printStackTrace();
-			return "Failed to load i=" + i;
+			e.printStackTrace();			
 		}
 
 		return "Loaded " + numCustomers + " customers in " + length + " seconds";
